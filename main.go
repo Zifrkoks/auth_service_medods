@@ -1,0 +1,5 @@
+package authservicemedods
+
+func main() {
+
+}
