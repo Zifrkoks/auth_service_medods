@@ -14,6 +14,7 @@ type BaseConfig struct {
 type AuthConfig struct {
 	JwtSecret string
 	Duration  time.Duration
+	WebHookIp string
 }
 
 type DBConfig struct {
@@ -43,6 +44,7 @@ func load_auth_conf_env() (auth AuthConfig) {
 	}
 	auth.Duration = time.Minute * time.Duration(minutes)
 	auth.JwtSecret = os.Getenv("AUTH_SECRET")
+	auth.WebHookIp = os.Getenv("AUTH_WEBHOOK_IP")
 	return
 }
 

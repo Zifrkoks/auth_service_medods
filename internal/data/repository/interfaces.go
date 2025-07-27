@@ -4,13 +4,15 @@ import "auth_service_medods/internal/domain/models"
 
 type (
 	UserRepository interface {
-		Create(models.User) (models.User, error)
-		GetByGUID(string) (models.User, error)
+		Create(*models.User) error
+		GetByGUID(string) (*models.User, error)
 	}
 	RefreshRepository interface {
-		Create(models.Refresh) (models.Refresh, error)
-		Get(token string) (models.Refresh, error)
-		Delete(models.Refresh) (models.Refresh, error)
-		Update(models.Refresh) (models.Refresh, error)
+		Create(*models.Refresh) error
+		Get(token string) (*models.Refresh, error)
+		Delete(*models.Refresh) error
+		Update(*models.Refresh) error
+		CheckByUserUUID(user_uuid string) (bool, error)
+		DeleteByUser(user_uuid string) error
 	}
 )
