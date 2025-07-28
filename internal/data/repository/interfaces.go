@@ -10,9 +10,7 @@ type (
 	RefreshRepository interface {
 		Create(*models.Refresh) error
 		Get(token string) (*models.Refresh, error)
-		Delete(*models.Refresh) error
-		Update(*models.Refresh) error
-		CheckByUserUUID(user_uuid string) (bool, error)
+		UserRefreshCount(user_uuid string) (int, error)
 		DeleteByUser(user_uuid string) error
 	}
 )

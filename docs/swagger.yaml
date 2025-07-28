@@ -1,0 +1,127 @@
+basePath: /
+definitions:
+  models.AuthSwag:
+    properties:
+      uuid:
+        example: uuid
+        type: string
+    type: object
+  models.RefreshSwag:
+    properties:
+      jwt:
+        example: jwt
+        type: string
+      refresh:
+        example: refresh
+        type: string
+    type: object
+info:
+  contact: {}
+  title: auth service for medods
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login form
+        in: body
+        name: Data
+        required: true
+        schema:
+          $ref: '#/definitions/models.AuthSwag'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Login
+      tags:
+      - AUTH
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Logout
+      tags:
+      - AUTH
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: refresh form
+        in: body
+        name: Data
+        required: true
+        schema:
+          $ref: '#/definitions/models.RefreshSwag'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Refresh
+      tags:
+      - AUTH
+  /data/me/:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get user's UUID
+securityDefinitions:
+  ApiKeyAuth:
+    description: Description for what is this security definition being used
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

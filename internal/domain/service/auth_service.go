@@ -22,6 +22,10 @@ type AuthService struct {
 	refreshes repository.RefreshRepository
 }
 
+func NewAuthService(users repository.UserRepository, refreshes repository.RefreshRepository) AuthService {
+	return AuthService{users: users, refreshes: refreshes}
+}
+
 func (service AuthService) Auth(data models.AuthData) (tokens models.AuthTokens, err error) {
 	user, err := service.users.GetByGUID(data.Id)
 
@@ -49,7 +53,7 @@ func (service AuthService) RefreshAuthTokens(data models.RefreshData) (tokens mo
 		if err != nil {
 			return models.AuthTokens{}, err
 		}
-		return tokens, errors.New("User-agent invalid")
+		return tokens, errors.New("user-agent invalid")
 	}
 	if old_refresh.Ip != data.Ip {
 		service.sendInfoAboutAuth(old_refresh.User.GUID, data.Ip)
@@ -59,15 +63,23 @@ func (service AuthService) RefreshAuthTokens(data models.RefreshData) (tokens mo
 		return models.AuthTokens{}, err
 	}
 	createdAt, err := jwt_token.Claims.GetIssuedAt()
+	if err != nil {
+		return tokens, err
+	}
 	if old_refresh.TimeCreated.Compare(createdAt.Time) != 0 {
-		service.refreshes.DeleteByUser(old_refresh.User.GUID)
+		err := service.refreshes.DeleteByUser(old_refresh.User.GUID)
+		if err != nil {
+			return tokens, errors.New("pair of refresh and jwt is invalid and database error")
+		}
 		return tokens, errors.New("pair of refresh and jwt is invalid")
 	}
 	tokens, err = service.createTokensPair(old_refresh.User, data.UserAgent, data.Ip)
 	if err != nil {
 		return models.AuthTokens{}, err
 	}
+
 	return
+
 }
 
 func (service AuthService) Logout(jwt_token string) (isLogout bool, err error) {
@@ -82,6 +94,26 @@ func (service AuthService) Logout(jwt_token string) (isLogout bool, err error) {
 	return false, service.refreshes.DeleteByUser(user_uuid)
 }
 
+func (service AuthService) ValidateJWT(jwt_string string) (claims *jwt.RegisteredClaims, err error) {
+	user_jwt, err := utils.ParseJWT(jwt_string)
+	if !user_jwt.Valid || err != nil {
+		return nil, errors.New("jwt invalid")
+	}
+
+	uuid_user, err := user_jwt.Claims.GetSubject()
+	if err != nil {
+		return nil, errors.New("jwt invalid")
+	}
+	count, err := service.refreshes.UserRefreshCount(uuid_user)
+	if err != nil || count == 0 {
+		return nil, errors.New("unauthorized")
+	}
+	if claims, ok := user_jwt.Claims.(*jwt.RegisteredClaims); ok {
+		return claims, nil
+	} else {
+		return nil, errors.New("claims not created")
+	}
+}
 func (service AuthService) createClaims(user models.User, createdAt time.Time) (claims jwt.RegisteredClaims) {
 	claims.Subject = user.GUID
 	claims.ExpiresAt = jwt.NewNumericDate(createdAt.Add((conf.Config.Auth.Duration * time.Minute)))
@@ -123,5 +155,6 @@ func (service AuthService) createTokensPair(user *models.User, userAgent string,
 	if err != nil {
 		return models.AuthTokens{}, err
 	}
+
 	return
 }

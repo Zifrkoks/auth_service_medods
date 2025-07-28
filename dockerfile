@@ -1,13 +1,14 @@
-
-FROM golang:1.24
+FROM golang:1.24.5
 
 WORKDIR /app
 
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY *.go ./
-RUN CGO_ENABLED=0 GOOS=linux go build -o /auth_service
+COPY . .
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+RUN swag init
+RUN CGO_ENABLED=0 GOOS=linux go build -o /main ./main.go
 
 EXPOSE 8080
-CMD ["/auth_service"]
+CMD ["/main"]
