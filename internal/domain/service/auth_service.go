@@ -7,9 +7,11 @@ import (
 	"auth_service_medods/internal/domain/utils"
 	"auth_service_medods/internal/logger"
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -40,13 +42,37 @@ func (service AuthService) Auth(data models.AuthData) (tokens models.AuthTokens,
 }
 
 func (service AuthService) RefreshAuthTokens(data models.RefreshData) (tokens models.AuthTokens, err error) {
-	old_refresh, err := service.refreshes.Get(data.Refresh)
+	refresh_bytes, err := base64.StdEncoding.DecodeString(data.Refresh)
+	if err != nil {
+		return models.AuthTokens{}, err
+	}
+	data.Refresh = string(refresh_bytes)
+	jwt_token, err := utils.ParseJWT(data.Jwt)
+	if err != nil {
+		return models.AuthTokens{}, err
+	}
+	createdAt, err := jwt_token.Claims.GetIssuedAt()
+	if err != nil {
+		return tokens, err
+	}
+	user_uuid, err := jwt_token.Claims.GetSubject()
+	if err != nil {
+		return models.AuthTokens{}, err
+	}
+	old_refreshes, err := service.refreshes.GetByUser(user_uuid)
 	if err != nil {
 		logger.Log("db error in AuthService RefreshAuthTokens:" + err.Error())
 		return
 	}
+	var old_refresh *models.Refresh = nil
+	for _, v := range old_refreshes {
+		err := bcrypt.CompareHashAndPassword([]byte(v.TokenHash), []byte(data.Refresh))
+		if err == nil {
+			old_refresh = &v
+		}
+	}
 	if old_refresh == nil {
-		return tokens, errors.New("not found")
+		return models.AuthTokens{}, errors.New("not found")
 	}
 	if old_refresh.UserAgent != data.UserAgent {
 		err = service.refreshes.DeleteByUser(old_refresh.User.GUID)
@@ -58,15 +84,10 @@ func (service AuthService) RefreshAuthTokens(data models.RefreshData) (tokens mo
 	if old_refresh.Ip != data.Ip {
 		service.sendInfoAboutAuth(old_refresh.User.GUID, data.Ip)
 	}
-	jwt_token, err := utils.ParseJWT(data.Jwt)
-	if err != nil {
-		return models.AuthTokens{}, err
-	}
-	createdAt, err := jwt_token.Claims.GetIssuedAt()
-	if err != nil {
-		return tokens, err
-	}
-	if old_refresh.TimeCreated.Compare(createdAt.Time) != 0 {
+	logger.LogImportant(createdAt.Time.String())
+	logger.LogImportant(old_refresh.TimeCreated.String())
+
+	if old_refresh.TimeCreated.Round(time.Second).Compare(createdAt.Time) != 0 {
 		err := service.refreshes.DeleteByUser(old_refresh.User.GUID)
 		if err != nil {
 			return tokens, errors.New("pair of refresh and jwt is invalid and database error")
@@ -82,31 +103,36 @@ func (service AuthService) RefreshAuthTokens(data models.RefreshData) (tokens mo
 
 }
 
-func (service AuthService) Logout(jwt_token string) (isLogout bool, err error) {
-	jwt, err := utils.ParseJWT(jwt_token)
+func (service AuthService) Logout(user_uuid string) (isLogout bool, err error) {
+	err = service.refreshes.DeleteByUser(user_uuid)
 	if err != nil {
-		return false, errors.New("jwt is invalid")
+		isLogout = true
+	} else {
+		isLogout = false
 	}
-	user_uuid, err := jwt.Claims.GetSubject()
-	if err != nil {
-		return false, errors.New("jwt is invalid")
-	}
-	return false, service.refreshes.DeleteByUser(user_uuid)
+	return
 }
 
 func (service AuthService) ValidateJWT(jwt_string string) (claims *jwt.RegisteredClaims, err error) {
 	user_jwt, err := utils.ParseJWT(jwt_string)
-	if !user_jwt.Valid || err != nil {
+	if err != nil {
+		return nil, err
+	}
+	if !user_jwt.Valid {
 		return nil, errors.New("jwt invalid")
 	}
 
 	uuid_user, err := user_jwt.Claims.GetSubject()
 	if err != nil {
-		return nil, errors.New("jwt invalid")
+		return nil, errors.New("cant get subject")
 	}
 	count, err := service.refreshes.UserRefreshCount(uuid_user)
-	if err != nil || count == 0 {
-		return nil, errors.New("unauthorized")
+	logger.Log(strconv.Itoa(count))
+	if count == 0 {
+		return nil, errors.New("unauthorized by ValidateJWT")
+	}
+	if err != nil {
+		return nil, err
 	}
 	if claims, ok := user_jwt.Claims.(*jwt.RegisteredClaims); ok {
 		return claims, nil
@@ -116,7 +142,7 @@ func (service AuthService) ValidateJWT(jwt_string string) (claims *jwt.Registere
 }
 func (service AuthService) createClaims(user models.User, createdAt time.Time) (claims jwt.RegisteredClaims) {
 	claims.Subject = user.GUID
-	claims.ExpiresAt = jwt.NewNumericDate(createdAt.Add((conf.Config.Auth.Duration * time.Minute)))
+	claims.ExpiresAt = jwt.NewNumericDate(createdAt.Add((conf.Config.Auth.Duration)))
 	claims.IssuedAt = jwt.NewNumericDate(createdAt)
 	return
 }
@@ -151,10 +177,10 @@ func (service AuthService) createTokensPair(user *models.User, userAgent string,
 	refresh.UserAgent = userAgent
 	refresh.Ip = ip
 	refresh.TimeCreated = authTime
-	err = service.refreshes.Create(&refresh)
+	err = service.refreshes.CreateOrUpdate(&refresh)
 	if err != nil {
 		return models.AuthTokens{}, err
 	}
-
+	tokens.Refresh = base64.StdEncoding.EncodeToString([]byte(tokens.Refresh))
 	return
 }

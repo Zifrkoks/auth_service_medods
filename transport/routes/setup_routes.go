@@ -1,6 +1,7 @@
 package routes
 
 import (
+	_ "auth_service_medods/docs"
 	"auth_service_medods/transport/middlewares"
 
 	"github.com/gin-contrib/cors"
@@ -18,8 +19,9 @@ func SetupRoutes(router *gin.Engine) {
 	auth := router.Group("/auth")
 	auth.POST("/login", Login)
 	auth.POST("/refresh", Refresh)
-	auth.POST("/logout", Logout)
 	data := router.Group("/data")
 	data.Use(middlewares.Jwt_middleware)
 	data.GET("/me", GetUUID)
+	data.POST("/logout", Logout)
+
 }

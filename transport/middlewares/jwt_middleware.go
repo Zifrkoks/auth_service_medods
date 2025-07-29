@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	app "auth_service_medods/internal/app"
+	"auth_service_medods/internal/logger"
 	"net/http"
 	"strings"
 
@@ -13,6 +14,7 @@ func Jwt_middleware(c *gin.Context) {
 	service := app.NewAuthService()
 	claims, err := service.ValidateJWT(tokenString)
 	if err != nil {
+		logger.LogImportant("Unauthorized by middleware")
 		c.AbortWithStatusJSON(http.StatusUnauthorized, err)
 		return
 	}

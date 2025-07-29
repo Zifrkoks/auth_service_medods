@@ -60,40 +60,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/logout": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "AUTH"
-                ],
-                "summary": "Logout",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/auth/refresh": {
             "post": {
                 "consumes": [
@@ -139,6 +105,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/data/logout": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "USER"
+                ],
+                "summary": "Logout",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/data/me/": {
             "get": {
                 "security": [
@@ -151,6 +156,9 @@ const docTemplate = `{
                 ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "USER"
                 ],
                 "summary": "Get user's UUID",
                 "responses": {
@@ -173,6 +181,9 @@ const docTemplate = `{
     "definitions": {
         "models.AuthSwag": {
             "type": "object",
+            "required": [
+                "uuid"
+            ],
             "properties": {
                 "uuid": {
                     "type": "string",
@@ -182,6 +193,10 @@ const docTemplate = `{
         },
         "models.RefreshSwag": {
             "type": "object",
+            "required": [
+                "jwt",
+                "refresh"
+            ],
             "properties": {
                 "jwt": {
                     "type": "string",

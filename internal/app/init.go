@@ -99,25 +99,26 @@ func InitUsers() (inited bool) {
 	err := repo.Create(&user1)
 	if err != nil {
 		logger.LogImportant("error:" + err.Error())
-		inited = false
-	} else {
-		logger.LogImportant(user1.GUID)
 	}
 	user2 := models.User{GUID: uuid.NewString()}
 	err = repo.Create(&user2)
 	if err != nil {
 		logger.LogImportant("error:" + err.Error())
-		inited = false
-	} else {
-		logger.LogImportant(user2.GUID)
 	}
 	user3 := models.User{GUID: uuid.NewString()}
 	err = repo.Create(&user3)
 	if err != nil {
 		logger.LogImportant("error:" + err.Error())
-		inited = false
-	} else {
-		logger.LogImportant(user3.GUID)
 	}
 	return
+}
+func PrintUsers() {
+	repo := NewDriverUserRepository()
+	users, err := repo.GetAll()
+	if err != nil {
+		logger.LogImportant("cant print")
+	}
+	for _, u := range users {
+		logger.LogImportant(u.GUID)
+	}
 }

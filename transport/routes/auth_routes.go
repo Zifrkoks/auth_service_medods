@@ -8,19 +8,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//	@Summary	Login
-//	@Tags		AUTH
-//	@Accept		json
-//	@Produce	json
-//	@Param		Data	body		view.AuthSwag	true	"Login form"
-//	@Success	200		{string}	string
-//	@Failure	400		{string}	string
-//	@Failure	404		{string}	string
-//	@Router		/auth/login [post]
+// @Summary	Login
+// @Tags		AUTH
+// @Accept		json
+// @Produce	json
+// @Param		Data	body		view.AuthSwag	true	"Login form"
+// @Success	200		{string}	string
+// @Failure	400		{string}	string
+// @Failure	404		{string}	string
+// @Router		/auth/login [post]
 func Login(c *gin.Context) {
 	var authReq view.AuthSwag
 	var authdata models.AuthData
 	if err := c.BindJSON(&authReq); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 	authdata.UserAgent = c.Request.UserAgent()
@@ -36,19 +37,20 @@ func Login(c *gin.Context) {
 
 }
 
-//	@Summary	Refresh
-//	@Tags		AUTH
-//	@Accept		json
-//	@Produce	json
-//	@Param		Data	body		view.RefreshSwag	true	"refresh form"
-//	@Success	200		{string}	string
-//	@Failure	400		{string}	string
-//	@Failure	404		{string}	string
-//	@Router		/auth/refresh [post]
+// @Summary	Refresh
+// @Tags		AUTH
+// @Accept		json
+// @Produce	json
+// @Param		Data	body		view.RefreshSwag	true	"refresh form"
+// @Success	200		{string}	string
+// @Failure	400		{string}	string
+// @Failure	404		{string}	string
+// @Router		/auth/refresh [post]
 func Refresh(c *gin.Context) {
 	var refreshReq view.RefreshSwag
 	var refreshdata models.RefreshData
 	if err := c.BindJSON(&refreshReq); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 	refreshdata.UserAgent = c.Request.UserAgent()
@@ -62,33 +64,5 @@ func Refresh(c *gin.Context) {
 		return
 	}
 	c.JSON(200, gin.H{"tokens": tokens})
-
-}
-
-//	@Summary	Logout
-//	@Tags		AUTH
-//	@Accept		json
-//	@Produce	json
-//	@Success	200	{string}	string
-//	@Failure	400	{string}	string
-//	@Failure	404	{string}	string
-//	@Router		/auth/logout [post]
-func Logout(c *gin.Context) {
-	var logoutReq view.JwtSwag
-	if err := c.BindJSON(&logoutReq); err != nil {
-		return
-	}
-
-	service := app.NewAuthService()
-	is_logout, err := service.Logout(logoutReq.Jwt)
-	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-	if is_logout {
-		c.JSON(200, gin.H{"result": "ok"})
-	} else {
-		c.JSON(400, gin.H{"result": "error"})
-	}
 
 }

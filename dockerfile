@@ -7,7 +7,9 @@ RUN go mod download
 
 COPY . .
 RUN go install github.com/swaggo/swag/cmd/swag@latest
-RUN swag init
+RUN go install github.com/swaggo/gin-swagger
+RUN go install github.com/swaggo/files
+RUN swag init -g main.go -o ./docs
 RUN CGO_ENABLED=0 GOOS=linux go build -o /main ./main.go
 
 EXPOSE 8080

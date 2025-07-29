@@ -5,6 +5,8 @@ definitions:
       uuid:
         example: uuid
         type: string
+    required:
+    - uuid
     type: object
   models.RefreshSwag:
     properties:
@@ -14,6 +16,9 @@ definitions:
       refresh:
         example: refresh
         type: string
+    required:
+    - jwt
+    - refresh
     type: object
 info:
   contact: {}
@@ -49,28 +54,6 @@ paths:
       summary: Login
       tags:
       - AUTH
-  /auth/logout:
-    post:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            type: string
-        "404":
-          description: Not Found
-          schema:
-            type: string
-      summary: Logout
-      tags:
-      - AUTH
   /auth/refresh:
     post:
       consumes:
@@ -100,6 +83,30 @@ paths:
       summary: Refresh
       tags:
       - AUTH
+  /data/logout:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Logout
+      tags:
+      - USER
   /data/me/:
     get:
       consumes:
@@ -118,6 +125,8 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get user's UUID
+      tags:
+      - USER
 securityDefinitions:
   ApiKeyAuth:
     description: Description for what is this security definition being used
