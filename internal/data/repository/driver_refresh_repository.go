@@ -15,7 +15,7 @@ func NewDriverRefreshRepository(db *sql.DB) DriverRefreshRepository {
 	return DriverRefreshRepository{db: db}
 }
 func (repo DriverRefreshRepository) CreateOrUpdate(entity *models.Refresh) (err error) {
-	res, err := repo.db.Exec("update refreshes set token_hash = $1,time_created= $2 where user_id = $3 and user_agent = $4 and ip = $5", entity.TokenHash, entity.TimeCreated, entity.User, entity.UserAgent, entity.Ip)
+	res, err := repo.db.Exec("update refreshes set token_hash = $1,time_created = $2 where user_id = $3 and user_agent = $4 and ip = $5", entity.TokenHash, entity.TimeCreated, entity.User.GUID, entity.UserAgent, entity.Ip)
 
 	if err != nil {
 		return err

@@ -87,7 +87,7 @@ func (service AuthService) RefreshAuthTokens(data models.RefreshData) (tokens mo
 	logger.LogImportant(createdAt.Time.String())
 	logger.LogImportant(old_refresh.TimeCreated.String())
 
-	if old_refresh.TimeCreated.Round(time.Second).Compare(createdAt.Time) != 0 {
+	if old_refresh.TimeCreated.Compare(createdAt.Time) != 0 {
 		err := service.refreshes.DeleteByUser(old_refresh.User.GUID)
 		if err != nil {
 			return tokens, errors.New("pair of refresh and jwt is invalid and database error")
@@ -103,14 +103,8 @@ func (service AuthService) RefreshAuthTokens(data models.RefreshData) (tokens mo
 
 }
 
-func (service AuthService) Logout(user_uuid string) (isLogout bool, err error) {
-	err = service.refreshes.DeleteByUser(user_uuid)
-	if err != nil {
-		isLogout = true
-	} else {
-		isLogout = false
-	}
-	return
+func (service AuthService) Logout(user_uuid string) (err error) {
+	return service.refreshes.DeleteByUser(user_uuid)
 }
 
 func (service AuthService) ValidateJWT(jwt_string string) (claims *jwt.RegisteredClaims, err error) {
@@ -159,7 +153,7 @@ func (service AuthService) sendInfoAboutAuth(user_uuid string, ip string) {
 }
 
 func (service AuthService) createTokensPair(user *models.User, userAgent string, ip string) (tokens models.AuthTokens, err error) {
-	authTime := time.Now()
+	authTime := time.Now().Round(time.Second)
 	tokens.Refresh = uuid.NewString()
 	token_hash, err := bcrypt.GenerateFromPassword([]byte(tokens.Refresh), 10)
 	if err != nil {

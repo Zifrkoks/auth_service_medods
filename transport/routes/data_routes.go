@@ -36,15 +36,10 @@ func GetUUID(c *gin.Context) {
 func Logout(c *gin.Context) {
 
 	service := app.NewAuthService()
-	is_logout, err := service.Logout(c.GetString("id"))
+	 err := service.Logout(c.GetString("id"))
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	if is_logout {
-		c.JSON(200, gin.H{"result": "ok"})
-	} else {
-		c.JSON(400, gin.H{"result": "error"})
-	}
-
+	c.JSON(200, gin.H{"result": "ok"})
 }
